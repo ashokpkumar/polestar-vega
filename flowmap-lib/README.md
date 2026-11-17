@@ -62,8 +62,13 @@ and models to cover middleware, dependencies, call trees and data sinks.
 ## Quick start
 
 ```bash
-pip install -e .            # from this folder; needs Python 3.9+ and FastAPI
+pip install polestar-vega   # needs Python 3.9+ and FastAPI
 ```
+
+The package on PyPI is called **polestar-vega**. In code and on the command line it is still **flowmap**
+(`from flowmap import mount_flowmap`, `flowmap serve ...`).
+
+From a clone of the repo instead: `pip install -e .` inside `flowmap-lib/`.
 
 Try it on the bundled sample shop API:
 

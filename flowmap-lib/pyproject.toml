@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fastapi-flowmap"
+name = "polestar-vega"
 version = "0.1.0"
 description = "Editable flow diagrams for FastAPI apps: see how every API works, change values in the picture, write them back to the code."
 readme = "README.md"
