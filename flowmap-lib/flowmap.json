@@ -1,0 +1,1126 @@
+{
+  "flowmap_version": 1,
+  "app": "examples.sample_app.main:app",
+  "title": "Sample shop API",
+  "routes": [
+    {
+      "id": "POST /items",
+      "method": "POST",
+      "path": "/items",
+      "name": "create_item",
+      "summary": "",
+      "tags": [
+        "items"
+      ],
+      "status_code": 201,
+      "response_type": "ItemOut",
+      "steps": [
+        {
+          "block": "fn:examples/sample_app/main.py:add_timing_header",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:examples/sample_app/main.py:RateLimitMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:starlette.middleware.cors:CORSMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "fn:examples/sample_app/main.py:current_user",
+          "role": "dependency",
+          "label": "user"
+        },
+        {
+          "block": "fn:examples/sample_app/services.py:get_db",
+          "role": "dependency",
+          "label": "db"
+        },
+        {
+          "block": "validation:POST /items",
+          "role": "validation",
+          "label": ""
+        },
+        {
+          "block": "model:examples/sample_app/models.py:ItemCreate",
+          "role": "body",
+          "label": "item"
+        },
+        {
+          "block": "fn:examples/sample_app/main.py:create_item",
+          "role": "handler",
+          "label": ""
+        },
+        {
+          "block": "model:examples/sample_app/models.py:ItemOut",
+          "role": "response",
+          "label": "ItemOut"
+        }
+      ]
+    },
+    {
+      "id": "GET /items/{item_id}",
+      "method": "GET",
+      "path": "/items/{item_id}",
+      "name": "read_item",
+      "summary": "",
+      "tags": [
+        "items"
+      ],
+      "status_code": null,
+      "response_type": "ItemOut",
+      "steps": [
+        {
+          "block": "fn:examples/sample_app/main.py:add_timing_header",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:examples/sample_app/main.py:RateLimitMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:starlette.middleware.cors:CORSMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "fn:examples/sample_app/main.py:current_user",
+          "role": "dependency",
+          "label": "user"
+        },
+        {
+          "block": "fn:examples/sample_app/services.py:get_db",
+          "role": "dependency",
+          "label": "db"
+        },
+        {
+          "block": "validation:GET /items/{item_id}",
+          "role": "validation",
+          "label": ""
+        },
+        {
+          "block": "fn:examples/sample_app/main.py:read_item",
+          "role": "handler",
+          "label": ""
+        },
+        {
+          "block": "model:examples/sample_app/models.py:ItemOut",
+          "role": "response",
+          "label": "ItemOut"
+        }
+      ]
+    },
+    {
+      "id": "GET /items",
+      "method": "GET",
+      "path": "/items",
+      "name": "list_items",
+      "summary": "",
+      "tags": [
+        "items"
+      ],
+      "status_code": null,
+      "response_type": "list[ItemOut]",
+      "steps": [
+        {
+          "block": "fn:examples/sample_app/main.py:add_timing_header",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:examples/sample_app/main.py:RateLimitMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:starlette.middleware.cors:CORSMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "fn:examples/sample_app/main.py:current_user",
+          "role": "dependency",
+          "label": "user"
+        },
+        {
+          "block": "fn:examples/sample_app/services.py:get_db",
+          "role": "dependency",
+          "label": "db"
+        },
+        {
+          "block": "validation:GET /items",
+          "role": "validation",
+          "label": ""
+        },
+        {
+          "block": "fn:examples/sample_app/main.py:list_items",
+          "role": "handler",
+          "label": ""
+        },
+        {
+          "block": "model:examples/sample_app/models.py:ItemOut",
+          "role": "response",
+          "label": "list[ItemOut]"
+        }
+      ]
+    },
+    {
+      "id": "GET /health",
+      "method": "GET",
+      "path": "/health",
+      "name": "health",
+      "summary": "",
+      "tags": [
+        "system"
+      ],
+      "status_code": null,
+      "response_type": "",
+      "steps": [
+        {
+          "block": "fn:examples/sample_app/main.py:add_timing_header",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:examples/sample_app/main.py:RateLimitMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "mw:starlette.middleware.cors:CORSMiddleware",
+          "role": "middleware",
+          "label": ""
+        },
+        {
+          "block": "fn:examples/sample_app/main.py:health",
+          "role": "handler",
+          "label": ""
+        }
+      ]
+    }
+  ],
+  "blocks": {
+    "fn:examples/sample_app/main.py:add_timing_header": {
+      "id": "fn:examples/sample_app/main.py:add_timing_header",
+      "kind": "middleware",
+      "name": "add_timing_header",
+      "is_async": true,
+      "editables": [],
+      "effects": [
+        {
+          "type": "transform",
+          "text": "Sets response header X-Process-Time",
+          "line": 50
+        }
+      ],
+      "calls": [],
+      "file": "examples/sample_app/main.py",
+      "line": 45,
+      "end_line": 51,
+      "hash": "91096bf636",
+      "summary": "Measures how long the request took and adds it as a response header.",
+      "summary_source": "docstring"
+    },
+    "mw:examples/sample_app/main.py:RateLimitMiddleware": {
+      "id": "mw:examples/sample_app/main.py:RateLimitMiddleware",
+      "kind": "middleware",
+      "name": "RateLimitMiddleware",
+      "config": {
+        "max_requests": "5",
+        "window_seconds": "60"
+      },
+      "editables": [
+        {
+          "label": "max_requests",
+          "group": "config",
+          "value": 5,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 42,
+          "col": 53,
+          "end_line": 42,
+          "end_col": 54,
+          "text": "5",
+          "id": "mw:examples/sample_app/main.py:RateLimitMiddleware#max_requests"
+        },
+        {
+          "label": "window_seconds",
+          "group": "config",
+          "value": 60,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 42,
+          "col": 71,
+          "end_line": 42,
+          "end_col": 73,
+          "text": "60",
+          "id": "mw:examples/sample_app/main.py:RateLimitMiddleware#window_seconds"
+        },
+        {
+          "label": "max_requests default",
+          "group": "param",
+          "value": 5,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 24,
+          "col": 48,
+          "end_line": 24,
+          "end_col": 49,
+          "text": "5",
+          "id": "mw:examples/sample_app/main.py:RateLimitMiddleware#max_requests default"
+        },
+        {
+          "label": "window_seconds default",
+          "group": "param",
+          "value": 60,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 24,
+          "col": 73,
+          "end_line": 24,
+          "end_col": 75,
+          "text": "60",
+          "id": "mw:examples/sample_app/main.py:RateLimitMiddleware#window_seconds default"
+        }
+      ],
+      "effects": [
+        {
+          "type": "reject",
+          "text": "Can stop the request early with status 429",
+          "line": 35
+        }
+      ],
+      "calls": [],
+      "file": "examples/sample_app/main.py",
+      "line": 21,
+      "end_line": 38,
+      "hash": "c2add1bb7b",
+      "summary": "Blocks a client that sends too many requests inside the time window.",
+      "summary_source": "docstring"
+    },
+    "mw:starlette.middleware.cors:CORSMiddleware": {
+      "id": "mw:starlette.middleware.cors:CORSMiddleware",
+      "kind": "middleware",
+      "name": "CORSMiddleware",
+      "config": {
+        "allow_origins": "['*']",
+        "allow_methods": "['*']"
+      },
+      "editables": [
+        {
+          "label": "allow_origins",
+          "group": "config",
+          "value": [
+            "*"
+          ],
+          "type": "list",
+          "file": "examples/sample_app/main.py",
+          "line": 41,
+          "col": 49,
+          "end_line": 41,
+          "end_col": 54,
+          "text": "[\"*\"]",
+          "id": "mw:starlette.middleware.cors:CORSMiddleware#allow_origins"
+        },
+        {
+          "label": "allow_methods",
+          "group": "config",
+          "value": [
+            "*"
+          ],
+          "type": "list",
+          "file": "examples/sample_app/main.py",
+          "line": 41,
+          "col": 70,
+          "end_line": 41,
+          "end_col": 75,
+          "text": "[\"*\"]",
+          "id": "mw:starlette.middleware.cors:CORSMiddleware#allow_methods"
+        }
+      ],
+      "effects": [],
+      "calls": [],
+      "external": true,
+      "summary": "Adds CORS headers so browsers on allowed origins can call the API.",
+      "summary_source": "builtin",
+      "file": "examples/sample_app/main.py",
+      "line": 41,
+      "end_line": 41
+    },
+    "fn:examples/sample_app/main.py:create_item": {
+      "id": "fn:examples/sample_app/main.py:create_item",
+      "kind": "function",
+      "name": "create_item",
+      "is_async": false,
+      "editables": [
+        {
+          "label": "@app.post path",
+          "group": "decorator",
+          "value": "/items",
+          "type": "str",
+          "file": "examples/sample_app/main.py",
+          "line": 62,
+          "col": 10,
+          "end_line": 62,
+          "end_col": 18,
+          "text": "\"/items\"",
+          "id": "fn:examples/sample_app/main.py:create_item#@app.post path"
+        },
+        {
+          "label": "@app.post status_code",
+          "group": "decorator",
+          "value": 201,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 62,
+          "col": 56,
+          "end_line": 62,
+          "end_col": 59,
+          "text": "201",
+          "id": "fn:examples/sample_app/main.py:create_item#@app.post status_code"
+        }
+      ],
+      "effects": [],
+      "calls": [
+        "fn:examples/sample_app/services.py:create_item"
+      ],
+      "file": "examples/sample_app/main.py",
+      "line": 62,
+      "end_line": 65,
+      "hash": "552feada21",
+      "summary": "Create an item for the calling user.",
+      "summary_source": "docstring"
+    },
+    "fn:examples/sample_app/services.py:create_item": {
+      "id": "fn:examples/sample_app/services.py:create_item",
+      "kind": "function",
+      "name": "create_item",
+      "is_async": false,
+      "editables": [
+        {
+          "label": "MAX_ITEMS_PER_OWNER",
+          "group": "constant",
+          "value": 20,
+          "type": "int",
+          "file": "examples/sample_app/services.py",
+          "line": 8,
+          "col": 22,
+          "end_line": 8,
+          "end_col": 24,
+          "text": "20",
+          "id": "fn:examples/sample_app/services.py:create_item#MAX_ITEMS_PER_OWNER"
+        }
+      ],
+      "effects": [
+        {
+          "type": "reject",
+          "text": "Can reject with 409: Item quota reached",
+          "line": 57
+        }
+      ],
+      "calls": [
+        "fn:examples/sample_app/services.py:ItemRepository.count_for",
+        "fn:examples/sample_app/services.py:add_tax",
+        "fn:examples/sample_app/services.py:ItemRepository.insert"
+      ],
+      "file": "examples/sample_app/services.py",
+      "line": 53,
+      "end_line": 60,
+      "hash": "05677394ce",
+      "summary": "Checks the owner's quota, applies tax, then stores the item.",
+      "summary_source": "docstring"
+    },
+    "fn:examples/sample_app/services.py:ItemRepository.count_for": {
+      "id": "fn:examples/sample_app/services.py:ItemRepository.count_for",
+      "kind": "function",
+      "name": "ItemRepository.count_for",
+      "is_async": false,
+      "editables": [],
+      "effects": [],
+      "calls": [
+        "sink:fn:examples/sample_app/services.py:ItemRepository.count_for:self.db.execute:1"
+      ],
+      "file": "examples/sample_app/services.py",
+      "line": 32,
+      "end_line": 34,
+      "hash": "c09d0692c7",
+      "summary": "",
+      "summary_source": "none"
+    },
+    "sink:fn:examples/sample_app/services.py:ItemRepository.count_for:self.db.execute:1": {
+      "id": "sink:fn:examples/sample_app/services.py:ItemRepository.count_for:self.db.execute:1",
+      "kind": "sink",
+      "sink_type": "db",
+      "name": "self.db.execute",
+      "summary": "SELECT COUNT(*) FROM items WHERE owner = ?",
+      "summary_source": "code",
+      "file": "examples/sample_app/services.py",
+      "line": 33,
+      "end_line": 33,
+      "editables": [],
+      "effects": [],
+      "calls": []
+    },
+    "fn:examples/sample_app/services.py:add_tax": {
+      "id": "fn:examples/sample_app/services.py:add_tax",
+      "kind": "function",
+      "name": "add_tax",
+      "is_async": false,
+      "editables": [
+        {
+          "label": "TAX_RATE",
+          "group": "constant",
+          "value": 0.18,
+          "type": "float",
+          "file": "examples/sample_app/services.py",
+          "line": 9,
+          "col": 11,
+          "end_line": 9,
+          "end_col": 15,
+          "text": "0.18",
+          "id": "fn:examples/sample_app/services.py:add_tax#TAX_RATE"
+        }
+      ],
+      "effects": [],
+      "calls": [],
+      "file": "examples/sample_app/services.py",
+      "line": 23,
+      "end_line": 25,
+      "hash": "7966041774",
+      "summary": "Adds sales tax to a price and rounds to 2 decimals.",
+      "summary_source": "docstring"
+    },
+    "fn:examples/sample_app/services.py:ItemRepository.insert": {
+      "id": "fn:examples/sample_app/services.py:ItemRepository.insert",
+      "kind": "function",
+      "name": "ItemRepository.insert",
+      "is_async": false,
+      "editables": [],
+      "effects": [],
+      "calls": [
+        "sink:fn:examples/sample_app/services.py:ItemRepository.insert:self.db.execute:1",
+        "sink:fn:examples/sample_app/services.py:ItemRepository.insert:self.db.commit:2"
+      ],
+      "file": "examples/sample_app/services.py",
+      "line": 36,
+      "end_line": 42,
+      "hash": "3077b9c45b",
+      "summary": "",
+      "summary_source": "none"
+    },
+    "sink:fn:examples/sample_app/services.py:ItemRepository.insert:self.db.execute:1": {
+      "id": "sink:fn:examples/sample_app/services.py:ItemRepository.insert:self.db.execute:1",
+      "kind": "sink",
+      "sink_type": "db",
+      "name": "self.db.execute",
+      "summary": "INSERT INTO items (owner, name, quantity, price) VALUES (?, ?, ?, ?)",
+      "summary_source": "code",
+      "file": "examples/sample_app/services.py",
+      "line": 37,
+      "end_line": 40,
+      "editables": [],
+      "effects": [],
+      "calls": []
+    },
+    "sink:fn:examples/sample_app/services.py:ItemRepository.insert:self.db.commit:2": {
+      "id": "sink:fn:examples/sample_app/services.py:ItemRepository.insert:self.db.commit:2",
+      "kind": "sink",
+      "sink_type": "db",
+      "name": "self.db.commit",
+      "summary": "",
+      "summary_source": "none",
+      "file": "examples/sample_app/services.py",
+      "line": 41,
+      "end_line": 41,
+      "editables": [],
+      "effects": [],
+      "calls": []
+    },
+    "fn:examples/sample_app/main.py:current_user": {
+      "id": "fn:examples/sample_app/main.py:current_user",
+      "kind": "function",
+      "name": "current_user",
+      "is_async": false,
+      "editables": [],
+      "effects": [
+        {
+          "type": "reject",
+          "text": "Can reject with 401: Invalid API key",
+          "line": 58
+        }
+      ],
+      "calls": [],
+      "file": "examples/sample_app/main.py",
+      "line": 54,
+      "end_line": 59,
+      "hash": "02678a527f",
+      "summary": "Turns the X-API-Key header into a user name, or rejects the call.",
+      "summary_source": "docstring",
+      "params": [
+        {
+          "name": "x-api-key",
+          "in": "header",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "constraints": []
+        }
+      ]
+    },
+    "fn:examples/sample_app/services.py:get_db": {
+      "id": "fn:examples/sample_app/services.py:get_db",
+      "kind": "function",
+      "name": "get_db",
+      "is_async": false,
+      "editables": [],
+      "effects": [],
+      "calls": [],
+      "file": "examples/sample_app/services.py",
+      "line": 18,
+      "end_line": 20,
+      "hash": "a60d3832f0",
+      "summary": "Hands the shared SQLite connection to whoever needs it.",
+      "summary_source": "docstring"
+    },
+    "validation:POST /items": {
+      "id": "validation:POST /items",
+      "kind": "validation",
+      "name": "Validate inputs",
+      "summary": "FastAPI checks these inputs and returns 422 if any is invalid.",
+      "summary_source": "builtin",
+      "params": [
+        {
+          "name": "item",
+          "in": "body",
+          "type": "ItemCreate",
+          "required": true,
+          "default": null,
+          "constraints": []
+        }
+      ],
+      "editables": [],
+      "effects": [
+        {
+          "type": "reject",
+          "text": "Can reject with 422: validation error",
+          "line": 62
+        }
+      ],
+      "calls": [],
+      "file": "examples/sample_app/main.py",
+      "line": 62,
+      "end_line": 65
+    },
+    "model:examples/sample_app/models.py:ItemCreate": {
+      "id": "model:examples/sample_app/models.py:ItemCreate",
+      "kind": "model",
+      "name": "ItemCreate",
+      "fields": [
+        {
+          "name": "name",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "constraints": [
+            "MinLen(min_length=2)",
+            "MaxLen(max_length=40)"
+          ]
+        },
+        {
+          "name": "quantity",
+          "type": "int",
+          "required": false,
+          "default": "1",
+          "constraints": [
+            "Ge(ge=0)",
+            "Le(le=5)"
+          ]
+        },
+        {
+          "name": "price",
+          "type": "float",
+          "required": true,
+          "default": null,
+          "constraints": [
+            "Gt(gt=0)"
+          ]
+        },
+        {
+          "name": "note",
+          "type": "Optional[str]",
+          "required": false,
+          "default": "None",
+          "constraints": []
+        }
+      ],
+      "editables": [
+        {
+          "label": "name min_length",
+          "group": "field",
+          "value": 2,
+          "type": "int",
+          "file": "examples/sample_app/models.py",
+          "line": 9,
+          "col": 33,
+          "end_line": 9,
+          "end_col": 34,
+          "text": "2",
+          "id": "model:examples/sample_app/models.py:ItemCreate#name min_length"
+        },
+        {
+          "label": "name max_length",
+          "group": "field",
+          "value": 40,
+          "type": "int",
+          "file": "examples/sample_app/models.py",
+          "line": 9,
+          "col": 47,
+          "end_line": 9,
+          "end_col": 49,
+          "text": "40",
+          "id": "model:examples/sample_app/models.py:ItemCreate#name max_length"
+        },
+        {
+          "label": "quantity default",
+          "group": "field",
+          "value": 1,
+          "type": "int",
+          "file": "examples/sample_app/models.py",
+          "line": 10,
+          "col": 34,
+          "end_line": 10,
+          "end_col": 35,
+          "text": "1",
+          "id": "model:examples/sample_app/models.py:ItemCreate#quantity default"
+        },
+        {
+          "label": "quantity ge",
+          "group": "field",
+          "value": 0,
+          "type": "int",
+          "file": "examples/sample_app/models.py",
+          "line": 10,
+          "col": 40,
+          "end_line": 10,
+          "end_col": 41,
+          "text": "0",
+          "id": "model:examples/sample_app/models.py:ItemCreate#quantity ge"
+        },
+        {
+          "label": "quantity le",
+          "group": "field",
+          "value": 5,
+          "type": "int",
+          "file": "examples/sample_app/models.py",
+          "line": 10,
+          "col": 46,
+          "end_line": 10,
+          "end_col": 47,
+          "text": "5",
+          "id": "model:examples/sample_app/models.py:ItemCreate#quantity le"
+        },
+        {
+          "label": "price gt",
+          "group": "field",
+          "value": 0,
+          "type": "int",
+          "file": "examples/sample_app/models.py",
+          "line": 11,
+          "col": 28,
+          "end_line": 11,
+          "end_col": 29,
+          "text": "0",
+          "id": "model:examples/sample_app/models.py:ItemCreate#price gt"
+        }
+      ],
+      "effects": [],
+      "calls": [],
+      "file": "examples/sample_app/models.py",
+      "line": 6,
+      "end_line": 12,
+      "hash": "74c99e007d",
+      "summary": "Payload a client sends to create an item.",
+      "summary_source": "docstring"
+    },
+    "model:examples/sample_app/models.py:ItemOut": {
+      "id": "model:examples/sample_app/models.py:ItemOut",
+      "kind": "model",
+      "name": "ItemOut",
+      "fields": [
+        {
+          "name": "id",
+          "type": "int",
+          "required": true,
+          "default": null,
+          "constraints": []
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "required": true,
+          "default": null,
+          "constraints": []
+        },
+        {
+          "name": "quantity",
+          "type": "int",
+          "required": true,
+          "default": null,
+          "constraints": []
+        },
+        {
+          "name": "price",
+          "type": "float",
+          "required": true,
+          "default": null,
+          "constraints": []
+        }
+      ],
+      "editables": [],
+      "effects": [],
+      "calls": [],
+      "file": "examples/sample_app/models.py",
+      "line": 15,
+      "end_line": 21,
+      "hash": "6ee2de4ba0",
+      "summary": "What the API returns for an item (internal cost is never exposed).",
+      "summary_source": "docstring"
+    },
+    "fn:examples/sample_app/main.py:read_item": {
+      "id": "fn:examples/sample_app/main.py:read_item",
+      "kind": "function",
+      "name": "read_item",
+      "is_async": false,
+      "editables": [
+        {
+          "label": "@app.get path",
+          "group": "decorator",
+          "value": "/items/{item_id}",
+          "type": "str",
+          "file": "examples/sample_app/main.py",
+          "line": 68,
+          "col": 9,
+          "end_line": 68,
+          "end_col": 27,
+          "text": "\"/items/{item_id}\"",
+          "id": "fn:examples/sample_app/main.py:read_item#@app.get path"
+        }
+      ],
+      "effects": [],
+      "calls": [
+        "fn:examples/sample_app/services.py:get_item"
+      ],
+      "file": "examples/sample_app/main.py",
+      "line": 68,
+      "end_line": 70,
+      "hash": "0bbc782559",
+      "summary": "",
+      "summary_source": "none"
+    },
+    "fn:examples/sample_app/services.py:get_item": {
+      "id": "fn:examples/sample_app/services.py:get_item",
+      "kind": "function",
+      "name": "get_item",
+      "is_async": false,
+      "editables": [],
+      "effects": [
+        {
+          "type": "reject",
+          "text": "Can reject with 404: Item not found",
+          "line": 67
+        }
+      ],
+      "calls": [
+        "fn:examples/sample_app/services.py:ItemRepository.fetch"
+      ],
+      "file": "examples/sample_app/services.py",
+      "line": 63,
+      "end_line": 68,
+      "hash": "bc86a606f1",
+      "summary": "",
+      "summary_source": "none"
+    },
+    "fn:examples/sample_app/services.py:ItemRepository.fetch": {
+      "id": "fn:examples/sample_app/services.py:ItemRepository.fetch",
+      "kind": "function",
+      "name": "ItemRepository.fetch",
+      "is_async": false,
+      "editables": [],
+      "effects": [],
+      "calls": [
+        "sink:fn:examples/sample_app/services.py:ItemRepository.fetch:self.db.execute:1"
+      ],
+      "file": "examples/sample_app/services.py",
+      "line": 44,
+      "end_line": 45,
+      "hash": "97f5265f93",
+      "summary": "",
+      "summary_source": "none"
+    },
+    "sink:fn:examples/sample_app/services.py:ItemRepository.fetch:self.db.execute:1": {
+      "id": "sink:fn:examples/sample_app/services.py:ItemRepository.fetch:self.db.execute:1",
+      "kind": "sink",
+      "sink_type": "db",
+      "name": "self.db.execute",
+      "summary": "SELECT * FROM items WHERE id = ?",
+      "summary_source": "code",
+      "file": "examples/sample_app/services.py",
+      "line": 45,
+      "end_line": 45,
+      "editables": [],
+      "effects": [],
+      "calls": []
+    },
+    "validation:GET /items/{item_id}": {
+      "id": "validation:GET /items/{item_id}",
+      "kind": "validation",
+      "name": "Validate inputs",
+      "summary": "FastAPI checks these inputs and returns 422 if any is invalid.",
+      "summary_source": "builtin",
+      "params": [
+        {
+          "name": "item_id",
+          "in": "path",
+          "type": "int",
+          "required": true,
+          "default": null,
+          "constraints": []
+        }
+      ],
+      "editables": [],
+      "effects": [
+        {
+          "type": "reject",
+          "text": "Can reject with 422: validation error",
+          "line": 68
+        }
+      ],
+      "calls": [],
+      "file": "examples/sample_app/main.py",
+      "line": 68,
+      "end_line": 70
+    },
+    "fn:examples/sample_app/main.py:list_items": {
+      "id": "fn:examples/sample_app/main.py:list_items",
+      "kind": "function",
+      "name": "list_items",
+      "is_async": false,
+      "editables": [
+        {
+          "label": "@app.get path",
+          "group": "decorator",
+          "value": "/items",
+          "type": "str",
+          "file": "examples/sample_app/main.py",
+          "line": 73,
+          "col": 9,
+          "end_line": 73,
+          "end_col": 17,
+          "text": "\"/items\"",
+          "id": "fn:examples/sample_app/main.py:list_items#@app.get path"
+        }
+      ],
+      "effects": [],
+      "calls": [
+        "fn:examples/sample_app/services.py:list_items"
+      ],
+      "file": "examples/sample_app/main.py",
+      "line": 73,
+      "end_line": 81,
+      "hash": "900843d836",
+      "summary": "List the caller's items, one page at a time.",
+      "summary_source": "docstring"
+    },
+    "fn:examples/sample_app/services.py:list_items": {
+      "id": "fn:examples/sample_app/services.py:list_items",
+      "kind": "function",
+      "name": "list_items",
+      "is_async": false,
+      "editables": [],
+      "effects": [],
+      "calls": [
+        "fn:examples/sample_app/services.py:ItemRepository.fetch_page"
+      ],
+      "file": "examples/sample_app/services.py",
+      "line": 71,
+      "end_line": 74,
+      "hash": "aaa6d5dbb1",
+      "summary": "",
+      "summary_source": "none"
+    },
+    "fn:examples/sample_app/services.py:ItemRepository.fetch_page": {
+      "id": "fn:examples/sample_app/services.py:ItemRepository.fetch_page",
+      "kind": "function",
+      "name": "ItemRepository.fetch_page",
+      "is_async": false,
+      "editables": [],
+      "effects": [],
+      "calls": [
+        "sink:fn:examples/sample_app/services.py:ItemRepository.fetch_page:self.db.execute:1"
+      ],
+      "file": "examples/sample_app/services.py",
+      "line": 47,
+      "end_line": 50,
+      "hash": "3a6f2360b5",
+      "summary": "",
+      "summary_source": "none"
+    },
+    "sink:fn:examples/sample_app/services.py:ItemRepository.fetch_page:self.db.execute:1": {
+      "id": "sink:fn:examples/sample_app/services.py:ItemRepository.fetch_page:self.db.execute:1",
+      "kind": "sink",
+      "sink_type": "db",
+      "name": "self.db.execute",
+      "summary": "SELECT * FROM items WHERE owner = ? LIMIT ? OFFSET ?",
+      "summary_source": "code",
+      "file": "examples/sample_app/services.py",
+      "line": 48,
+      "end_line": 50,
+      "editables": [],
+      "effects": [],
+      "calls": []
+    },
+    "validation:GET /items": {
+      "id": "validation:GET /items",
+      "kind": "validation",
+      "name": "Validate inputs",
+      "summary": "FastAPI checks these inputs and returns 422 if any is invalid.",
+      "summary_source": "builtin",
+      "params": [
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "int",
+          "required": false,
+          "default": "10",
+          "constraints": [
+            "Ge(ge=1)",
+            "Le(le=50)"
+          ]
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "type": "int",
+          "required": false,
+          "default": "0",
+          "constraints": [
+            "Ge(ge=0)"
+          ]
+        }
+      ],
+      "editables": [
+        {
+          "label": "limit default",
+          "group": "param",
+          "value": 10,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 75,
+          "col": 23,
+          "end_line": 75,
+          "end_col": 25,
+          "text": "10",
+          "id": "validation:GET /items#limit default"
+        },
+        {
+          "label": "limit ge",
+          "group": "param",
+          "value": 1,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 75,
+          "col": 30,
+          "end_line": 75,
+          "end_col": 31,
+          "text": "1",
+          "id": "validation:GET /items#limit ge"
+        },
+        {
+          "label": "limit le",
+          "group": "param",
+          "value": 50,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 75,
+          "col": 36,
+          "end_line": 75,
+          "end_col": 38,
+          "text": "50",
+          "id": "validation:GET /items#limit le"
+        },
+        {
+          "label": "offset default",
+          "group": "param",
+          "value": 0,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 76,
+          "col": 24,
+          "end_line": 76,
+          "end_col": 25,
+          "text": "0",
+          "id": "validation:GET /items#offset default"
+        },
+        {
+          "label": "offset ge",
+          "group": "param",
+          "value": 0,
+          "type": "int",
+          "file": "examples/sample_app/main.py",
+          "line": 76,
+          "col": 30,
+          "end_line": 76,
+          "end_col": 31,
+          "text": "0",
+          "id": "validation:GET /items#offset ge"
+        }
+      ],
+      "effects": [
+        {
+          "type": "reject",
+          "text": "Can reject with 422: validation error",
+          "line": 73
+        }
+      ],
+      "calls": [],
+      "file": "examples/sample_app/main.py",
+      "line": 73,
+      "end_line": 81
+    },
+    "fn:examples/sample_app/main.py:health": {
+      "id": "fn:examples/sample_app/main.py:health",
+      "kind": "function",
+      "name": "health",
+      "is_async": false,
+      "editables": [
+        {
+          "label": "@app.get path",
+          "group": "decorator",
+          "value": "/health",
+          "type": "str",
+          "file": "examples/sample_app/main.py",
+          "line": 84,
+          "col": 9,
+          "end_line": 84,
+          "end_col": 18,
+          "text": "\"/health\"",
+          "id": "fn:examples/sample_app/main.py:health#@app.get path"
+        }
+      ],
+      "effects": [],
+      "calls": [],
+      "file": "examples/sample_app/main.py",
+      "line": 84,
+      "end_line": 86,
+      "hash": "0a13c38d83",
+      "summary": "",
+      "summary_source": "none"
+    }
+  }
+}

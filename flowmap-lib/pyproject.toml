@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fastapi-flowmap"
+version = "0.1.0"
+description = "Editable flow diagrams for FastAPI apps: see how every API works, change values in the picture, write them back to the code."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "ashokpkumar" }]
+keywords = ["fastapi", "diagram", "flow", "visualization", "openapi", "documentation", "code-generation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["fastapi>=0.100"]
+
+[project.urls]
+Homepage = "https://github.com/ashokpkumar/polestar-vega"
+Source = "https://github.com/ashokpkumar/polestar-vega"
+Issues = "https://github.com/ashokpkumar/polestar-vega/issues"
+Documentation = "https://github.com/ashokpkumar/polestar-vega/blob/main/flowmap-lib/README.md"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+flowmap = "flowmap.cli:main"
+
+[tool.setuptools]
+packages = ["flowmap"]
+
+[tool.setuptools.package-data]
+flowmap = ["static/*"]

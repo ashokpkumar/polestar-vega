@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>flowmap</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --line: #dfe2e8; --text: #1c2230; --muted: #68718a;
+  --card: #ffffff; --edge: #9aa3b8; --accent: #2f6fed; --accent-soft: #e6eeff;
+  --danger: #c93a3a; --ok: #1f8f5f; --code: #f0f2f6; --shadow: 0 1px 2px rgba(20,30,60,.08), 0 4px 14px rgba(20,30,60,.06);
+  --middleware: #b7791f; --dependency: #7c4ddb; --security: #c93a3a; --validation: #2f6fed;
+  --body: #c2408f; --handler: #1f8f5f; --function: #4b5870; --sink: #0e8a94; --response: #c2408f; --io: #1c2230;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151c; --panel: #1a1e28; --line: #2c3342; --text: #e6e9f0; --muted: #96a0b8;
+    --card: #1f2430; --edge: #5d6880; --accent: #6b9bff; --accent-soft: #223457;
+    --danger: #ff7b7b; --ok: #4fd19a; --code: #151922; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    --middleware: #e6b04f; --dependency: #b295ff; --security: #ff7b7b; --validation: #6b9bff;
+    --body: #f07fc3; --handler: #4fd19a; --function: #a9b4cc; --sink: #4fd0da; --response: #f07fc3; --io: #e6e9f0;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); display: grid; grid-template-rows: 52px 1fr; grid-template-columns: 280px 1fr 380px; }
+code, pre, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 6px 12px; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button:disabled { opacity: .5; cursor: default; }
+input, textarea { font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+header { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+header .brand { font-weight: 700; letter-spacing: -.01em; }
+header .app { color: var(--muted); }
+header .spacer { flex: 1; }
+#pending { display: none; align-items: center; gap: 10px; background: var(--accent-soft); border-radius: 8px; padding: 4px 6px 4px 12px; }
+#pending.on { display: flex; }
+
+nav { background: var(--panel); border-right: 1px solid var(--line); overflow: auto; padding: 12px; }
+nav input { width: 100%; margin-bottom: 10px; }
+nav h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 14px 4px 6px; }
+.route { display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 7px; }
+.route:hover { background: var(--bg); }
+.route.sel { background: var(--accent-soft); }
+.route .path { overflow-wrap: anywhere; font-size: 13px; }
+.method { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; color: #fff; flex: none; min-width: 44px; text-align: center; }
+.GET { background: #1f8f5f; } .POST { background: #2f6fed; } .PUT { background: #b7791f; } .PATCH { background: #7c4ddb; } .DELETE { background: #c93a3a; } .WS, .OPTIONS, .HEAD { background: #4b5870; }
+
+main { position: relative; overflow: hidden; cursor: grab; }
+main.drag { cursor: grabbing; }
+#world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+#edges { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+#edges path { fill: none; stroke: var(--edge); stroke-width: 1.6; }
+#edges path.spine { stroke-width: 2.2; }
+.node { position: absolute; width: 250px; height: 108px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--c); border-radius: 9px; padding: 8px 10px; box-shadow: var(--shadow); cursor: pointer; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
+.node:hover { border-color: var(--c); }
+.node.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+.node.changed { background: var(--accent-soft); }
+.node .role { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--c); display: flex; justify-content: space-between; }
+.node .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.node .sum { color: var(--muted); font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: none; }
+.node .badges { margin-top: auto; display: flex; gap: 6px; font-size: 11px; white-space: nowrap; overflow: hidden; }
+.badge { border-radius: 4px; padding: 0 5px; background: var(--bg); color: var(--muted); }
+.badge.rej { color: var(--danger); } .badge.edit { color: var(--accent); }
+.node.io { border-left-width: 1px; align-items: center; justify-content: center; text-align: center; height: 56px; background: var(--io); color: var(--bg); border-color: var(--io); cursor: default; }
+.node.io .name { font-size: 13px; }
+#tools { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 6px; }
+#empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+
+aside { background: var(--panel); border-left: 1px solid var(--line); overflow: auto; padding: 16px; }
+aside h2 { margin: 2px 0 2px; font-size: 16px; overflow-wrap: anywhere; }
+aside h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 6px; }
+aside .where { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+aside .tag { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--c); }
+aside p { margin: 8px 0; }
+.hint { color: var(--muted); font-size: 12px; }
+.effects { margin: 0; padding: 0; list-style: none; }
+.effects li { padding: 3px 0 3px 18px; position: relative; }
+.effects li::before { content: "●"; position: absolute; left: 2px; font-size: 9px; top: 7px; color: var(--muted); }
+.effects li.reject::before { color: var(--danger); } .effects li.transform::before { color: var(--middleware); }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+td, th { text-align: left; padding: 4px 6px 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+th { color: var(--muted); font-weight: 500; }
+td.nw { white-space: nowrap; overflow-wrap: normal; }
+.ed { display: grid; grid-template-columns: 1fr 120px 24px; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.ed label { overflow-wrap: anywhere; font-size: 13px; }
+.ed input[type=number], .ed input[type=text] { width: 100%; }
+.ed.dirty input { border-color: var(--accent); background: var(--accent-soft); }
+.ed .was { grid-column: 1 / -1; font-size: 11px; color: var(--accent); margin-top: -3px; }
+.ed .undo { border: 0; background: none; padding: 0; color: var(--muted); visibility: hidden; }
+.ed.dirty .undo { visibility: visible; }
+pre.src { background: var(--code); border: 1px solid var(--line); border-radius: 7px; padding: 10px; overflow: auto; font-size: 12px; line-height: 1.5; max-height: 360px; margin: 0; }
+.used button { display: block; border: 0; background: none; padding: 2px 0; color: var(--accent); text-align: left; }
+
+#modal { position: fixed; inset: 0; background: rgba(10,14,24,.5); display: none; place-items: center; z-index: 10; }
+#modal.on { display: grid; }
+#modal .box { background: var(--panel); border-radius: 12px; width: min(820px, 92vw); max-height: 86vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
+#modal .head { padding: 16px 20px 6px; }
+#modal .head h2 { margin: 0 0 4px; font-size: 17px; }
+#modal pre { margin: 10px 20px; padding: 12px; background: var(--code); border: 1px solid var(--line); border-radius: 8px; overflow: auto; font-size: 12.5px; line-height: 1.5; flex: 1; }
+#modal .foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 20px 16px; }
+.add { color: var(--ok); } .del { color: var(--danger); } .hunk { color: var(--muted); }
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px; display: none; z-index: 20; max-width: 80vw; }
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">flowmap</span>
+  <span class="app" id="appname"></span>
+  <span class="spacer"></span>
+  <div id="pending"><span id="pendingText"></span><button id="discard">Discard</button><button class="primary" id="review">Review &amp; apply to code</button></div>
+  <button id="refresh" title="Re-read the code">Refresh from code</button>
+</header>
+<nav>
+  <input id="search" type="search" placeholder="Filter APIs…" aria-label="Filter APIs">
+  <div id="routes"></div>
+</nav>
+<main id="main">
+  <div id="world"><svg id="edges"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--edge);stroke:none"/></marker></defs></svg><div id="nodes"></div></div>
+  <div id="empty">Pick an API on the left.</div>
+  <div id="tools"><button id="zoomOut" aria-label="Zoom out">−</button><button id="zoomIn" aria-label="Zoom in">+</button><button id="fit">Fit</button></div>
+</main>
+<aside id="detail"><p class="hint">Click any block to see what it does, what it can reject, and which values you can change.</p></aside>
+<div id="modal"><div class="box">
+  <div class="head"><h2>Change the code?</h2><div class="hint" id="modalHint">These exact lines will be rewritten. Nothing else is touched.</div></div>
+  <pre id="diff"></pre>
+  <div class="foot"><button id="cancel">Cancel</button><button class="primary" id="apply">Apply to code</button></div>
+</div></div>
+<div id="toast"></div>
+<script>
+"use strict";
+const W = 250, H = 108, GX = 70, GY = 26, IO_H = 56;
+const ROLE_LABEL = { middleware: "Middleware", dependency: "Dependency", security: "Security", validation: "Validation", body: "Request body", handler: "Handler", response: "Response model", function: "Function", sink: "Data", model: "Model" };
+const SINK_LABEL = { db: "Database", http: "HTTP call", cache: "Cache", file: "File", cloud: "Cloud service", email: "Email", queue: "Queue" };
+let spec = null, current = null, selected = null, selectedRole = null;
+const pending = new Map();   // editable id -> new value
+let view = { x: 40, y: 30, k: 1 };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+async function api(path, body) {
+  const res = await fetch(path.replace(/^\//, ""), body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+function toast(msg, ms = 3200) { const t = $("toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", ms); }
+
+/* ---------- sidebar ---------- */
+function renderRoutes() {
+  const q = $("search").value.trim().toLowerCase();
+  const groups = new Map();
+  for (const r of spec.routes) {
+    if (q && !(r.id + " " + r.name).toLowerCase().includes(q)) continue;
+    const tag = r.tags[0] || "other";
+    if (!groups.has(tag)) groups.set(tag, []);
+    groups.get(tag).push(r);
+  }
+  let html = "";
+  for (const [tag, list] of groups) {
+    html += `<h3>${esc(tag)}</h3>`;
+    for (const r of list) html += `<button class="route${current && current.id === r.id ? " sel" : ""}" data-id="${esc(r.id)}"><span class="method ${esc(r.method)}">${esc(r.method)}</span><span class="path mono">${esc(r.path)}</span></button>`;
+  }
+  $("routes").innerHTML = html || `<p class="hint">No API matches.</p>`;
+}
+$("routes").addEventListener("click", e => { const b = e.target.closest(".route"); if (b) selectRoute(b.dataset.id); });
+$("search").addEventListener("input", renderRoutes);
+
+/* ---------- diagram ---------- */
+function blockChanged(b) { return (b.editables || []).some(e => pending.has(e.id)); }
+function nodeHtml(b, role, extra) {
+  const kind = role || (b.kind === "sink" ? "sink" : b.kind);
+  const label = b.kind === "sink" ? (SINK_LABEL[b.sink_type] || "Data") : (ROLE_LABEL[kind] || kind);
+  const rejects = (b.effects || []).filter(e => e.type === "reject").length;
+  const edits = (b.editables || []).length;
+  let badges = "";
+  if (edits) badges += `<span class="badge edit">✎ ${edits} value${edits > 1 ? "s" : ""}</span>`;
+  if (rejects) badges += `<span class="badge rej">can reject</span>`;
+  if ((b.effects || []).some(e => e.type === "transform")) badges += `<span class="badge">changes data</span>`;
+  return `<div class="role"><span>${esc(label)}</span><span>${esc(extra || "")}</span></div>
+    <div class="name mono">${esc(b.name)}</div><div class="sum">${esc(b.summary || (b.kind === "sink" ? "" : "No description yet"))}</div><div class="badges">${badges}</div>`;
+}
+function draw() {
+  const nodes = [], edges = [];
+  let row = 0;   // y cursor in px
+  const place = (id, role, label, depth, y, trail) => {
+    const b = spec.blocks[id];
+    if (!b) return 0;
+    const n = { id, role, b, x: depth * (W + GX), y, label };
+    nodes.push(n);
+    let used = 0;
+    if (!trail.includes(id)) for (const c of b.calls || []) {
+      const child = { parent: n, y: y + used };
+      const h = place(c, null, "", depth + 1, y + used, trail.concat(id));
+      if (h) { edges.push({ from: n, toId: c, toY: child.y, depth: depth + 1 }); used += h; }
+    }
+    return Math.max(H + GY, used);
+  };
+  const io = (name, y) => { const n = { io: true, name, x: 0, y }; nodes.push(n); return n; };
+  let prev = io(`${current.method}  ${current.path}`, 0);
+  row = IO_H + GY + 8;
+  for (const s of current.steps) {
+    const before = nodes.length;
+    const h = place(s.block, s.role, s.label, 0, row, []);
+    const n = nodes[before];
+    if (!n) continue;
+    edges.push({ spine: true, from: prev, to: n });
+    prev = n; row += h + 8;
+  }
+  const end = io(`Response ${current.status_code || 200}${current.response_type ? "  ·  " + current.response_type : ""}`, row);
+  edges.push({ spine: true, from: prev, to: end });
+
+  $("nodes").innerHTML = nodes.map((n, i) => n.io
+    ? `<div class="node io" style="left:${n.x}px;top:${n.y}px"><div class="name mono">${esc(n.name)}</div></div>`
+    : `<div class="node${selected === n.id ? " sel" : ""}${blockChanged(n.b) ? " changed" : ""}" tabindex="0" data-id="${esc(n.id)}" data-role="${esc(n.role || "")}" style="left:${n.x}px;top:${n.y}px;--c:var(--${n.b.kind === "sink" ? "sink" : (n.role || n.b.kind)})">${nodeHtml(n.b, n.role, n.label)}</div>`).join("");
+  let paths = "";
+  for (const e of edges) {
+    if (e.spine) {
+      const x = e.from.x + W / 2, y1 = e.from.y + (e.from.io ? IO_H : H), y2 = e.to.y;
+      paths += `<path class="spine" marker-end="url(#arrow)" d="M${x},${y1} L${x},${y2 - 2}"/>`;
+    } else {
+      const x1 = e.from.x + W, y1 = e.from.y + H / 2, x2 = e.depth * (W + GX), y2 = e.toY + H / 2, mx = (x1 + x2) / 2;
+      paths += `<path marker-end="url(#arrow)" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2 - 2},${y2}"/>`;
+    }
+  }
+  const svg = $("edges");
+  svg.querySelectorAll("path:not(marker path)").forEach(p => p.remove());
+  svg.insertAdjacentHTML("beforeend", paths);
+  draw.size = { w: Math.max(...nodes.map(n => n.x)) + W, h: row + IO_H };
+  $("empty").style.display = "none";
+}
+function applyView() { $("world").style.transform = `translate(${view.x}px,${view.y}px) scale(${view.k})`; }
+function fit() {
+  const m = $("main").getBoundingClientRect(), s = draw.size;
+  if (!s) return;
+  const k = Math.min(1, (m.width - 60) / s.w, (m.height - 60) / s.h);
+  view = { k: Math.max(k, .6), x: 30, y: 30 };
+  if (s.w * view.k < m.width - 60) view.x = (m.width - s.w * view.k) / 2;
+  applyView();
+}
+function selectRoute(id, keepView) {
+  current = spec.routes.find(r => r.id === id) || spec.routes[0];
+  if (!current) return;
+  renderRoutes(); draw();
+  if (!keepView) fit();
+  location.hash = encodeURIComponent(current.id);
+}
+$("nodes").addEventListener("click", e => { const n = e.target.closest(".node[data-id]"); if (n) selectBlock(n.dataset.id, n.dataset.role); });
+$("nodes").addEventListener("keydown", e => { if (e.key === "Enter") { const n = e.target.closest(".node[data-id]"); if (n) selectBlock(n.dataset.id, n.dataset.role); } });
+
+const main = $("main");
+let drag = null;
+main.addEventListener("pointerdown", e => { if (e.target.closest(".node[data-id], #tools")) return; drag = { x: e.clientX - view.x, y: e.clientY - view.y }; main.classList.add("drag"); main.setPointerCapture(e.pointerId); });
+main.addEventListener("pointermove", e => { if (!drag) return; view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; applyView(); });
+main.addEventListener("pointerup", () => { drag = null; main.classList.remove("drag"); });
+function zoom(f, cx, cy) {
+  const r = main.getBoundingClientRect(); cx = cx ?? r.width / 2; cy = cy ?? r.height / 2;
+  const k = Math.min(2, Math.max(.25, view.k * f));
+  view.x = cx - (cx - view.x) * (k / view.k); view.y = cy - (cy - view.y) * (k / view.k); view.k = k; applyView();
+}
+main.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = main.getBoundingClientRect();
+  if (e.ctrlKey || e.metaKey) zoom(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top);
+  else { view.x -= e.deltaX; view.y -= e.deltaY; applyView(); }
+}, { passive: false });
+$("zoomIn").onclick = () => zoom(1.2); $("zoomOut").onclick = () => zoom(1 / 1.2); $("fit").onclick = fit;
+
+/* ---------- detail panel ---------- */
+function reach(id, seen) { if (seen.has(id)) return; seen.add(id); for (const c of (spec.blocks[id] || {}).calls || []) reach(c, seen); }
+function usedBy(id) {
+  return spec.routes.filter(r => { const s = new Set(); r.steps.forEach(st => reach(st.block, s)); return s.has(id); });
+}
+function fmt(v) { return typeof v === "string" ? v : JSON.stringify(v); }
+function editorRow(e) {
+  const has = pending.has(e.id), v = has ? pending.get(e.id) : e.value;
+  let input;
+  if (e.type === "bool") input = `<input type="checkbox" data-ed="${esc(e.id)}" ${v ? "checked" : ""}>`;
+  else if (e.type === "int" || e.type === "float") input = `<input type="number" step="${e.type === "int" ? 1 : "any"}" data-ed="${esc(e.id)}" value="${esc(v)}">`;
+  else input = `<input type="text" data-ed="${esc(e.id)}" value="${esc(e.type === "list" ? JSON.stringify(v) : v)}">`;
+  return `<div class="ed${has ? " dirty" : ""}"><label>${esc(e.label)}<div class="hint mono" title="${esc(e.file)}">${esc(e.file.split("/").pop())}:${e.line}</div></label>${input}<button class="undo" data-undo="${esc(e.id)}" title="Undo this change" aria-label="Undo">↺</button>${has ? `<div class="was">was ${esc(fmt(e.value))}</div>` : ""}</div>`;
+}
+function paramTable(list, withIn) {
+  return `<table><tr>${withIn ? "<th>In</th>" : ""}<th>Name</th><th>Type</th><th>Rules</th></tr>` + list.map(p =>
+    `<tr>${withIn ? `<td>${esc(p.in)}</td>` : ""}<td class="mono nw">${esc(p.name)}</td><td class="mono">${esc(p.type)}</td><td>${esc([p.required ? "required" : "default " + p.default].concat(p.constraints || []).join(", "))}</td></tr>`).join("") + "</table>";
+}
+async function selectBlock(id, role) {
+  selected = id; selectedRole = role || null;
+  document.querySelectorAll(".node").forEach(n => n.classList.toggle("sel", n.dataset.id === id));
+  renderDetail();
+  const b = spec.blocks[id];
+  if (b && b.file && b.kind !== "validation") {
+    try { const s = await api("/api/source?block=" + encodeURIComponent(id)); if (selected === id && s.code) $("src").textContent = s.code; } catch (err) { /* source is optional */ }
+  }
+}
+function renderDetail() {
+  const b = spec.blocks[selected];
+  if (!b) { $("detail").innerHTML = `<p class="hint">Click any block to see what it does, what it can reject, and which values you can change.</p>`; return; }
+  const kind = b.kind === "sink" ? "sink" : (selectedRole || b.kind);
+  const label = b.kind === "sink" ? (SINK_LABEL[b.sink_type] || "Data") : (ROLE_LABEL[kind] || kind);
+  let h = `<div class="tag" style="--c:var(--${kind})">${esc(label)}</div><h2 class="mono">${esc(b.name)}</h2>`;
+  if (b.file) h += `<div class="where mono">${esc(b.file)}:${b.line}</div>`;
+  else if (b.external) h += `<div class="where">Comes from an installed library</div>`;
+  h += `<p id="sumText">${esc(b.summary) || `<span class="hint">No description yet. Add a docstring, write one here, or run <code>flowmap describe</code>.</span>`}</p>`;
+  if (b.kind !== "sink" && b.kind !== "validation") h += `<button id="editSum">Edit description</button>`;
+  if (b.summary_source === "ai") h += ` <span class="hint">Written by AI. Check it against the code below.</span>`;
+  if ((b.effects || []).length) h += `<h4>What it can do to the request</h4><ul class="effects">` + b.effects.map(e => `<li class="${esc(e.type)}">${esc(e.text)}</li>`).join("") + `</ul>`;
+  if ((b.params || []).length) h += `<h4>Inputs</h4>` + paramTable(b.params, true);
+  if ((b.fields || []).length) h += `<h4>Fields</h4>` + paramTable(b.fields, false);
+  if (b.config && Object.keys(b.config).length) h += `<h4>Configured with</h4><table>` + Object.entries(b.config).map(([k, v]) => `<tr><td class="mono">${esc(k)}</td><td class="mono">${esc(v)}</td></tr>`).join("") + `</table>`;
+  if ((b.editables || []).length) h += `<h4>Values you can change</h4>` + b.editables.map(editorRow).join("") + `<p class="hint">Edit a value, then use “Review &amp; apply to code” at the top.</p>`;
+  const users = usedBy(b.id);
+  if (users.length > 1) h += `<h4>Used by ${users.length} APIs</h4><div class="used">` + users.map(r => `<button data-route="${esc(r.id)}" class="mono">${esc(r.id)}</button>`).join("") + `</div>`;
+  if (b.file && b.kind !== "validation") h += `<h4>Code</h4><pre class="src mono" id="src">…</pre>`;
+  $("detail").innerHTML = h;
+}
+function readInput(el, e) {
+  if (e.type === "bool") return el.checked;
+  if (e.type === "int") { const n = Number(el.value); return Number.isInteger(n) && el.value !== "" ? n : undefined; }
+  if (e.type === "float") { const n = Number(el.value); return el.value !== "" && Number.isFinite(n) ? n : undefined; }
+  if (e.type === "list") { try { const v = JSON.parse(el.value); return Array.isArray(v) ? v : undefined; } catch { return undefined; } }
+  return el.value;
+}
+$("detail").addEventListener("change", e => {
+  const id = e.target.dataset.ed; if (!id) return;
+  const ed = (spec.blocks[selected].editables || []).find(x => x.id === id);
+  const v = readInput(e.target, ed);
+  if (v === undefined) { toast(`That is not a valid ${ed.type} value.`); renderDetail(); refillSource(); return; }
+  if (same(v, ed.value)) pending.delete(id); else pending.set(id, v);
+  afterPendingChange();
+});
+$("detail").addEventListener("click", async e => {
+  const t = e.target;
+  if (t.dataset.undo) { pending.delete(t.dataset.undo); afterPendingChange(); }
+  else if (t.dataset.route) { selectRoute(t.dataset.route); }
+  else if (t.id === "editSum") {
+    const b = spec.blocks[selected];
+    $("sumText").outerHTML = `<textarea id="sumEdit" rows="3" style="width:100%">${esc(b.summary)}</textarea>`;
+    t.outerHTML = `<button class="primary" id="saveSum">Save description</button>`;
+    $("sumEdit").focus();
+  } else if (t.id === "saveSum") {
+    try { spec = (await api("/api/summary", { block: selected, summary: $("sumEdit").value })).spec; selectRoute(current.id, true); renderDetail(); refillSource(); toast("Description saved to the spec file."); }
+    catch (err) { toast(err.message); }
+  }
+});
+function refillSource() { if (selected) selectBlock(selected, selectedRole); }
+function afterPendingChange() {
+  const n = pending.size;
+  $("pending").classList.toggle("on", n > 0);
+  $("pendingText").textContent = `${n} unsaved change${n === 1 ? "" : "s"}`;
+  draw(); renderDetail(); refillSource();
+}
+
+/* ---------- apply ---------- */
+const changes = () => [...pending].map(([id, value]) => ({ id, value }));
+function showDiff(text) {
+  $("diff").innerHTML = text.split("\n").map(l => {
+    const c = l.startsWith("+") && !l.startsWith("+++") ? "add" : l.startsWith("-") && !l.startsWith("---") ? "del" : l.startsWith("@@") ? "hunk" : "";
+    return c ? `<span class="${c}">${esc(l)}</span>` : esc(l);
+  }).join("\n");
+}
+$("review").onclick = async () => {
+  try { const r = await api("/api/preview", { changes: changes() }); showDiff(r.diff || "No difference."); $("modal").classList.add("on"); $("apply").focus(); }
+  catch (err) { toast(err.message, 6000); }
+};
+$("cancel").onclick = () => $("modal").classList.remove("on");
+$("discard").onclick = () => { pending.clear(); afterPendingChange(); };
+$("apply").onclick = async () => {
+  $("apply").disabled = true;
+  try {
+    const r = await api("/api/apply", { changes: changes() });
+    spec = r.spec; pending.clear(); $("modal").classList.remove("on");
+    afterLoad(true); toast(`Code updated: ${r.files.join(", ")}`);
+  } catch (err) { toast(err.message, 6000); }
+  $("apply").disabled = false;
+};
+$("refresh").onclick = async () => {
+  try { spec = (await api("/api/refresh", {})).spec; afterLoad(true); toast("Diagram rebuilt from the code."); }
+  catch (err) { toast(err.message, 6000); }
+};
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("modal").classList.remove("on"); });
+window.addEventListener("beforeunload", e => { if (pending.size) e.preventDefault(); });
+
+function afterLoad(keepView) {
+  $("appname").textContent = [spec.title, spec.app].filter(Boolean).join("  ·  ");
+  document.title = "flowmap – " + (spec.title || spec.app);
+  const want = current ? current.id : decodeURIComponent(location.hash.slice(1));
+  if (selected && !spec.blocks[selected]) selected = null;
+  $("pending").classList.toggle("on", pending.size > 0);
+  selectRoute(want, keepView); renderDetail(); refillSource();
+}
+api("/api/spec").then(s => { spec = s; afterLoad(false); }).catch(err => { $("empty").textContent = "Could not load the spec: " + err.message; });
+</script>
+</body>
+</html>
