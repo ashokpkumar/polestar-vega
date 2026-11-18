@@ -137,8 +137,8 @@ Each API is drawn as a vertical flow from request to response, in execution orde
 | N7 | Extract a large app (200+ routes) in under 10 seconds | ⬜ not measured |
 | N8 | Automated tests for extraction, editing, and refusal cases | ✅ 6 tests |
 | N9 | Tested on real-world projects (beyond the sample app) | ⬜ |
-| N10 | CI on GitHub Actions (tests on Python 3.9–3.13) | ⬜ |
-| N11 | Published to PyPI | ⬜ |
+| N10 | CI on GitHub Actions (tests on Python 3.9–3.13) | 🟡 workflow written, not yet run on GitHub |
+| N11 | Published to PyPI | 🟡 package `polestar-vega` built and checked; release workflow written |
 
 ---
 

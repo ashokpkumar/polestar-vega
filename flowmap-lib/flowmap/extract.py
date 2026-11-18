@@ -18,7 +18,7 @@ import sys
 import typing
 from pathlib import Path
 
-SPEC_VERSION = 1
+SPEC_VERSION = 2
 MAX_DEPTH = 6
 
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "api_route", "websocket"}
@@ -516,6 +516,23 @@ class Extractor:
         events = [n for n in ast.walk(node) if isinstance(n, (ast.Assign, ast.Call))]
         events.sort(key=lambda n: (n.lineno, n.col_offset, isinstance(n, ast.Call)))
         out, seen_sinks = [], set()
+        sites = self.blocks[parent_id].setdefault("call_sites", {})
+
+        def note_site(child_id: str, call: ast.Call) -> None:
+            """Remember which top-level statement of this function makes the call (for drag and drop)."""
+            if child_id in sites:
+                return
+            for st in getattr(node, "body", []):
+                if st.lineno <= call.lineno <= st.end_lineno:
+                    arg0 = ""
+                    if call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str):
+                        arg0 = call.args[0].value
+                    sites[child_id] = {
+                        "line": st.lineno, "end_line": st.end_lineno,
+                        "movable": isinstance(st, (ast.Expr, ast.Assign, ast.AnnAssign, ast.AugAssign)),
+                        "text": _dotted(call.func) or "", "arg0": arg0,
+                    }
+                    return
         for n in events:
             if isinstance(n, ast.Assign):
                 value = n.value.value if isinstance(n.value, ast.Await) else n.value
@@ -538,6 +555,7 @@ class Extractor:
                 if child:
                     if child not in out and child != parent_id:
                         out.append(child)
+                        note_site(child, n)
                     continue
             if inspect.isclass(obj) or text is None:
                 continue
@@ -558,6 +576,7 @@ class Extractor:
                     "editables": [], "effects": [], "calls": [],
                 }
                 out.append(sid)
+                note_site(sid, n)
         return out
 
     @staticmethod
@@ -593,7 +612,8 @@ class Extractor:
             f = self.file(path)
             if f is None:
                 continue
-            for n in ast.walk(f.tree):
+            for stmt in ast.walk(f.tree):
+                n = stmt.value if isinstance(stmt, ast.Expr) else None
                 if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
                         and n.func.attr == "add_middleware" and n.args
                         and (_dotted(n.args[0]) or "").split(".")[-1] == cls_name):
@@ -608,6 +628,11 @@ class Extractor:
             bid = self.function_block(dispatch)
             if bid:
                 self.blocks[bid]["kind"] = "middleware"
+                df, dnode = self.locate(dispatch)
+                for d in getattr(dnode, "decorator_list", []):
+                    if isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute) and d.func.attr == "middleware":
+                        self.blocks[bid]["site"] = {"file": self.rel(df.path), "line": d.lineno,
+                                                    "end_line": d.end_lineno, "kind": "decorator"}
                 return bid
         f, node = self.locate(cls)
         where = self.rel(f.path) if f else cls.__module__
@@ -625,6 +650,8 @@ class Extractor:
             "config": {k: _short(repr(v), 60) for k, v in kwargs.items()},
             "editables": editables, "effects": [], "calls": [],
         }
+        if call is not None:
+            block["site"] = {"file": self.rel(cf.path), "line": call.lineno, "end_line": call.end_lineno, "kind": "call"}
         self.blocks[bid] = block
         if isinstance(node, ast.ClassDef):
             block["editables"] += [e for e in self._class_editables(f, node, cls)
@@ -680,9 +707,9 @@ class Extractor:
                 todo.extend(typing.get_args(t))
         return found
 
-    def _dependency_steps(self, dependant, steps: list) -> None:
+    def _dependency_steps(self, dependant, steps: list, top: bool = True) -> None:
         for dep in getattr(dependant, "dependencies", []) or []:
-            self._dependency_steps(dep, steps)
+            self._dependency_steps(dep, steps, False)
             call = dep.call
             is_security = type(call).__module__.startswith("fastapi.security")
             target = call if inspect.isfunction(call) or inspect.ismethod(call) else getattr(type(call), "__call__", None)
@@ -700,8 +727,15 @@ class Extractor:
             if params:
                 self.blocks[bid]["params"] = params
             role = "security" if is_security else "dependency"
-            if not any(s["block"] == bid for s in steps):
-                steps.append({"block": bid, "role": role, "label": dep.name or ""})
+            # where it is declared: the route decorator, a handler parameter, or inside another dependency
+            where = {"source": ("param" if dep.name else "decorator") if top else "nested"}
+            if where["source"] == "param":
+                where["param"] = dep.name
+            existing = next((s for s in steps if s["block"] == bid), None)
+            if existing is None:
+                steps.append({"block": bid, "role": role, "label": dep.name or "", **where})
+            elif existing.get("source") == "nested" and top:
+                existing.update(where)
 
     def route(self, route, middleware_ids: list) -> list:
         endpoint = getattr(route, "endpoint", None)
@@ -711,6 +745,11 @@ class Extractor:
         out = []
         methods = sorted(getattr(route, "methods", None) or ["WS"])
         handler_id = self.function_block(endpoint)
+        decorator = None
+        hf, hnode = self.locate(endpoint)
+        for d in getattr(hnode, "decorator_list", []):
+            if isinstance(d, ast.Call) and isinstance(d.func, ast.Attribute) and d.func.attr in HTTP_METHODS:
+                decorator = {"file": self.rel(hf.path), "line": d.lineno, "end_line": d.end_lineno}
         for method in methods:
             if method == "HEAD" and "GET" in methods:
                 continue
@@ -753,6 +792,8 @@ class Extractor:
                 "tags": [str(t) for t in (getattr(route, "tags", None) or [])],
                 "status_code": getattr(route, "status_code", None),
                 "response_type": _tname(response_model) if response_model is not None else "",
+                "handler": handler_id,
+                "decorator": decorator,
                 "steps": steps,
             })
         return out
@@ -771,6 +812,7 @@ class Extractor:
             "flowmap_version": SPEC_VERSION,
             "app": self.target,
             "title": getattr(self.app, "title", "") or "",
+            "middleware": middleware_ids,
             "routes": routes,
             "blocks": self.blocks,
         }

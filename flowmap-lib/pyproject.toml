@@ -35,7 +35,7 @@ Issues = "https://github.com/ashokpkumar/polestar-vega/issues"
 Documentation = "https://github.com/ashokpkumar/polestar-vega/blob/main/flowmap-lib/README.md"
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "httpx"]
 
 [project.scripts]
 flowmap = "flowmap.cli:main"

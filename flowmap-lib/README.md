@@ -8,8 +8,12 @@ Add one line to your app (or run one command) and get an interactive map of each
 middleware → dependencies → validation → handler → service functions → database.
 Change a limit in the diagram, review the diff, and the code is updated for you.
 
-![status](https://img.shields.io/badge/status-prototype%200.1.0-orange)
-![python](https://img.shields.io/badge/python-3.9%2B-blue)
+[![PyPI](https://img.shields.io/pypi/v/polestar-vega?color=3775A9&logo=pypi&logoColor=white)](https://pypi.org/project/polestar-vega/)
+[![Python](https://img.shields.io/pypi/pyversions/polestar-vega?logo=python&logoColor=white)](https://pypi.org/project/polestar-vega/)
+[![Downloads](https://img.shields.io/pypi/dm/polestar-vega)](https://pypi.org/project/polestar-vega/)
+[![Tests](https://github.com/ashokpkumar/polestar-vega/actions/workflows/tests.yml/badge.svg)](https://github.com/ashokpkumar/polestar-vega/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/pypi/l/polestar-vega)](https://github.com/ashokpkumar/polestar-vega/blob/main/LICENSE)
+![status](https://img.shields.io/badge/status-prototype-orange)
 ![deps](https://img.shields.io/badge/dependencies-FastAPI%20only-009688)
 ![ui](https://img.shields.io/badge/UI-no%20build%20step-8a63d2)
 

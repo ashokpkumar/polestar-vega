@@ -302,7 +302,7 @@
       "end_line": 38,
       "hash": "c2add1bb7b",
       "summary": "Blocks a client that sends too many requests inside the time window.",
-      "summary_source": "docstring"
+      "summary_source": "manual"
     },
     "mw:starlette.middleware.cors:CORSMiddleware": {
       "id": "mw:starlette.middleware.cors:CORSMiddleware",
